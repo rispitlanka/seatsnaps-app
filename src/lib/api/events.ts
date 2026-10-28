@@ -23,12 +23,31 @@ export async function listEvents() {
   return asArray<Event>(payload);
 }
 
+export type EventSearchFilters = { where?: string; when?: string; what?: string };
+
+export async function searchEvents(filters: EventSearchFilters = {}) {
+  const query = Object.entries(filters)
+    .filter(([, value]) => value?.trim())
+    .map(([key, value]) => `${key}=${encodeURIComponent(value!.trim())}`)
+    .join("&");
+  const payload = await apiRequest<unknown>(`/events/search${query ? `?${query}` : ""}`);
+  return asArray<Event>(payload);
+}
+
+export function getEventVenue(id: string) {
+  return apiRequest<EventVenue>(`/event-venues/${encodeURIComponent(id)}`);
+}
+
+export function getEventCategory(slug: string) {
+  return apiRequest<EventCategory>(`/event-categories/slug/${encodeURIComponent(slug)}`);
+}
+
 export function getEventById(id: string) {
-  return apiRequest<Event>(`/events/${id}`, { errorContext: "event" });
+  return apiRequest<Event>(`/events/${encodeURIComponent(id)}`, { errorContext: "event" });
 }
 
 export function getEventBySlug(slug: string) {
-  return apiRequest<Event>(`/events/slug/${slug}`, { errorContext: "event" });
+  return apiRequest<Event>(`/events/slug/${encodeURIComponent(slug)}`, { errorContext: "event" });
 }
 
 export async function listEventSessions(eventId: string) {

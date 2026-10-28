@@ -56,6 +56,10 @@ export type EventVenue = {
   is_active?: boolean;
   status?: ApprovalStatus;
   city_id?: string | null;
+  venue_city?: City | null;
+  description?: string | null;
+  venue_features?: { feature: { id: string; name: string } }[];
+  events?: Event[];
 };
 
 export type OrganizationSummary = {

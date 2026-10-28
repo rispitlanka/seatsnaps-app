@@ -46,6 +46,7 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit",
     "test:ui": "node scripts/test-designs.cjs",
+    "test:catalog": "node scripts/test-catalog.cjs",
     "ui:import": "python3 scripts/import-designs.py"
   },
   "private": true

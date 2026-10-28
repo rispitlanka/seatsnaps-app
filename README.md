@@ -1,5 +1,41 @@
 # Welcome to your Expo app 👋
 
+## Mobile browsing API integration
+
+Home, Explore, category pages, event details, search results, venue details, and
+the city picker use the backend configured by `EXPO_PUBLIC_API_URL`.
+
+- Public lists: `/events`, `/event-categories`, `/event-venues`, `/cities`.
+- Event discovery: `/events/search` with `where`, `when`, and `what` filters.
+- Details: `/events/:id`, `/events/slug/:slug`,
+  `/event-categories/slug/:slug`, and `/event-venues/:id`.
+
+The backend does not expose keyword search. The app matches keywords against the
+returned events (including category, organiser, tags, and location) and venues.
+Date and category filters apply to events; city filters apply to both events and
+venues. Choosing **All cities** removes the location restriction. Organiser
+summaries and their event lists come from public event records.
+
+These routes show loading, empty, and retry states and do not fall back to mock
+records when the API fails. Missing artwork uses neutral placeholders. Home
+retains its existing card/rail layout. Sample-only venue statistics, maps,
+facilities, and event content have been removed from the integrated detail pages.
+
+Ticket purchasing remains outside this integration. The event page displays
+backend ticket information without opening the simulated checkout. Other account,
+payment, ticket, and design-library screens may still use demo data.
+
+Validation:
+
+```bash
+npm run typecheck
+npm run test:catalog
+# Optional read-only checks against EXPO_PUBLIC_API_URL in .env:
+npm run test:catalog -- --live
+# Verify native Android bundling; this does not create an APK:
+npx expo export --platform android --output-dir /tmp/seatsnaps-catalog-android
+```
+
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
