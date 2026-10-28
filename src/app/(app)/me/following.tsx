@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
@@ -36,6 +36,7 @@ export default function Following() {
   const followingCount = (list: Followed[], prefix: string) => list.filter(x => !unfollowed[prefix + x.id]).length;
   const orgCount = followingCount(followedOrganisers, 'o:');
   const venCount = followingCount(followedVenues, 'v:');
+  useEffect(() => { if (!orgCount && !venCount) setTab('org'); }, [orgCount, venCount]);
   const tabs = [`Organisers (${orgCount})`, `Venues (${venCount})`];
   const rows = tab === 'org' ? followedOrganisers : followedVenues;
   const prefix = tab === 'org' ? 'o:' : 'v:';

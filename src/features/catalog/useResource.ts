@@ -18,5 +18,7 @@ export function useResource<T>(key: string, loader: () => Promise<T>) {
     return () => { active = false; };
   }, [key, attempt]);
   const retry = useCallback(() => setAttempt(value => value + 1), []);
-  return { ...(state.key === key ? state : { loading: true, data: undefined, error: undefined }), retry };
+  const current = state.key === key ? state : { loading: true, data: undefined, error: undefined };
+  // The request key is internal state, not React's special JSX `key` prop.
+  return { loading: current.loading, data: current.data, error: current.error, retry };
 }

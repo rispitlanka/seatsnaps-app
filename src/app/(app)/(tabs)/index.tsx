@@ -9,6 +9,7 @@ import { listEventCategories, searchEvents } from '@/lib/api/events';
 import { useResource } from '@/features/catalog/useResource';
 import { ResourceState } from '@/features/catalog/components';
 import { eventsInPeriod, homeCard, publicEvents } from '@/features/catalog/model';
+import { categoryIcon } from '@/features/catalog/design-model';
 const whenOptions = ['Any time', 'Today', 'This weekend'];
 import { usePrefs } from '@/providers/prefs';
 import { useSession } from '@/providers/session';
@@ -36,7 +37,7 @@ export default function Home() {
   const events = resource.data?.events ?? [];
   const featuredEvents = events.filter(event => event.is_featured);
   const featured = (featuredEvents.length ? featuredEvents : events.slice(0, 5)).map(homeCard);
-  const homeCategories = (resource.data?.categories ?? []).map(category => ({ slug: category.slug, label: category.name, icon: 'grid' as const }));
+  const homeCategories = (resource.data?.categories ?? []).map(category => ({ slug: category.slug, label: category.name, icon: categoryIcon(category.name) }));
   const weekend = eventsInPeriod(events, when).map(homeCard);
   const nearYou = events.map(homeCard);
   const topOrganisers = [...new Map(events.flatMap(event => event.organization ? [[event.organization.id, event.organization] as const] : [])).values()].map(org => ({
@@ -92,6 +93,7 @@ export default function Home() {
         </View>
         <ScrollView
           horizontal
+          style={{ height: 360, flexGrow: 0 }}
           showsHorizontalScrollIndicator={false}
           snapToInterval={312}
           decelerationRate="fast"

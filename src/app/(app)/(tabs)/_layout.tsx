@@ -17,11 +17,15 @@ const tabs: { name: string; href: '/' | '/explore' | '/promotions' | '/account';
 export default function TabsLayout() {
   const { bottom } = useSafeAreaInsets();
   return (
-    <Tabs>
-      <TabSlot />
+    <Tabs style={{ flex: 1, minHeight: 0, backgroundColor: c.page }}>
+      {/* Bound the screen independently of its scrollable content. TabSlot's
+          default flexShrink: 0 can otherwise push the bar below the viewport. */}
+      <View style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <TabSlot style={{ flex: 1, flexBasis: 0, flexShrink: 1, minHeight: 0 }} />
+      </View>
       <View
         accessibilityRole="tablist"
-        style={{ flexDirection: 'row', height: 70 + Math.max(14, bottom), paddingBottom: Math.max(14, bottom), backgroundColor: c.white, borderTopWidth: 1, borderTopColor: c.line }}
+        style={{ flexDirection: 'row', flexShrink: 0, height: 70 + Math.max(14, bottom), paddingBottom: Math.max(14, bottom), backgroundColor: c.white, borderTopWidth: 1, borderTopColor: c.line }}
       >
         {tabs.map(tab => (
           <TabTrigger key={tab.name} name={tab.name} asChild>

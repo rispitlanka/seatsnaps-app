@@ -11,6 +11,7 @@ import { Checkbox, Eyebrow, Field, Footer, PrimaryButton, Tap, inputText } from 
 import { Icon } from '@/ui/Icon';
 import { Display, Hl, T } from '@/ui/Text';
 import { c, font } from '@/ui/tokens';
+import { InvalidPromoCheckout } from '@/components/booking/InvalidPromoCheckout';
 
 function Line({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
@@ -46,6 +47,9 @@ export default function Checkout() {
   // Sample cards starting with 4000 are declined so the failure screen (I4) can be reviewed.
   const declined = cart.method === 'card' && cardNumber.replace(/\s/g, '').startsWith('4000');
   const seats = [...cart.seats].sort().join(', ');
+
+  if (promoError) return <InvalidPromoCheckout code={promoCode} error={promoError}
+    onChange={setPromoCode} onApply={applyPromo} onContinue={() => setPromoError(null)} />;
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.page }}>

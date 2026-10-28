@@ -3,7 +3,7 @@ import { View } from 'react-native';
 
 import { defaultNotifications, notificationGroups } from '@/mocks/account';
 import { useSession } from '@/providers/session';
-import { Eyebrow } from '@/ui/components';
+import { BackButton, Eyebrow } from '@/ui/components';
 import { ListCard, ListRow, SettingsScreen, Toggle } from '@/ui/settings';
 import { Display } from '@/ui/Text';
 
@@ -13,7 +13,7 @@ export default function NotificationSettings() {
   const [on, setOn] = useState(defaultNotifications);
 
   return (
-    <SettingsScreen>
+    <SettingsScreen back={<BackButton variant="card" size={36} />}>
       <Display>Notifications.</Display>
       {notificationGroups.map(group => (
         <View key={group.title} style={{ gap: 10 }}>

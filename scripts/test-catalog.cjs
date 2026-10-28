@@ -62,6 +62,17 @@ async function main() {
   assert.equal((await api.listEvents())[0].id, 'one', 'wrapped list responses are supported');
   response = [second];
   assert.equal((await api.searchEvents())[0].id, 'two', 'bare list responses are supported');
+  const designs = load('src/features/catalog/design-model.ts');
+  const list = designs.listDesign([first], [{ id: 'music', name: 'Concerts', slug: 'concerts' }], [first.venue]);
+  assert.equal(list.categories[0].count, '1 events', 'design card counts come from the API records');
+  assert.equal(list.organisers[0].name, 'Island Music');
+  assert.equal(list.organisers[0].verified, false, 'the adapter must not invent verification');
+  assert.equal(list.categoryEvents[0].id, 'one', 'design links retain backend identifiers');
+  assert.equal(designs.eventDesign(first).tiers[0].priceLabel, 'LKR 4,500');
+  assert.equal(designs.eventDesign(first).event.fullName, first.name);
+  assert.equal(designs.venueDesign({ ...first.venue, events: [first] }).venue.events[0].id, 'one');
+  assert.equal(designs.listDesign([], [], []).organizer, undefined, 'empty API responses must not create sample organizers');
+  assert.equal(designs.categoryIcon('Concerts'), 'music');
   console.log('Catalog tests passed: keyword matching, dates, prices, missing data, public statuses, API paths and response formats.');
 
   if (process.argv.includes('--live')) await liveCheck();

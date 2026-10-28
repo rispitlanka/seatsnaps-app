@@ -183,8 +183,8 @@ export function CircleButton({
   );
 }
 
-export function BackButton({ onPress, variant = 'outline' }: { onPress?: () => void; variant?: 'outline' | 'card' | 'solid' }) {
-  return <CircleButton icon="chevronLeft" label="Back" variant={variant} onPress={onPress ?? (() => goBack())} />;
+export function BackButton({ onPress, variant = 'outline', size = 44 }: { onPress?: () => void; variant?: 'outline' | 'card' | 'solid'; size?: number }) {
+  return <CircleButton icon="chevronLeft" label="Back" variant={variant} size={size} onPress={onPress ?? (() => goBack())} />;
 }
 
 export const inputText = { fontFamily: font[400], fontSize: 15, color: c.ink, padding: 0, outlineWidth: 0 } as const;
