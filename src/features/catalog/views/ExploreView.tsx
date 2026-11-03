@@ -30,11 +30,14 @@ export default function Explore({ model }: { model: ListDesign }) {
   const openPulse = () => organizer && router.push({ pathname: '/explore/organiser/[id]', params: { id: organizer.id } });
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 20, gap: 18 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 18 }}>
       <StatusBar style="dark" />
       <Display>Explore <Hl>events.</Hl></Display>
-      <Segmented options={TABS} value={tab} onChange={setTab} />
-      <SearchLink placeholder={`Search ${tab.toLowerCase()}`} onPress={() => router.push('/search')} />
+      <View style={{ gap: 8 }}>
+        <Segmented options={TABS} value={tab} onChange={setTab} />
+        <SearchLink placeholder={`Search ${tab.toLowerCase()}`} onPress={() => router.push('/search')} />
+      </View>
 
       {tab === 'Categories' ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
@@ -124,5 +127,6 @@ export default function Explore({ model }: { model: ListDesign }) {
         </>
       ) : null}
     </ScrollView>
+    </View>
   );
 }

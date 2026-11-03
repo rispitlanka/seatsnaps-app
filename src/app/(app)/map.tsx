@@ -55,7 +55,7 @@ export default function MapView() {
   const sy = height / 844;
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.mapBg }}>
+    <View style={{ flex: 1, backgroundColor: c.mapBg, paddingTop: top }}>
       <StatusBar style="dark" />
       <MapArt width={width} height={height} />
 
@@ -75,7 +75,7 @@ export default function MapView() {
         );
       })}
 
-      <View style={{ position: 'absolute', top, left: 16, right: 16, gap: 10 }}>
+      <View style={{ position: 'absolute', top: 12, left: 16, right: 16, gap: 10 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <Tap accessibilityRole="button" accessibilityLabel="Back" onPress={() => goBack()} style={{ width: 48, height: 48, borderRadius: 999, backgroundColor: c.white, alignItems: 'center', justifyContent: 'center', boxShadow: float }}>
             <Icon name="chevronLeft" size={20} stroke={2.2} />

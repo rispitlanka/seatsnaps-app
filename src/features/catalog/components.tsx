@@ -1,11 +1,12 @@
 import type { PropsWithChildren } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import type { Event, EventVenue } from '@/types/event';
 import { eventCoverUrl, lowestPriceLabel, mediaUrl } from '@/lib/event-display';
 import { BackButton, PrimaryButton, Tap, useTopPad } from '@/ui/components';
+import { SkeletonStack } from '@/ui/skeleton';
 import { Display, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
 import { dateLabel, venueAddress } from './model';
@@ -23,19 +24,19 @@ export function CatalogPage({ title, back = true, refresh, loading = false, chil
   title: string; back?: boolean; refresh?: () => void; loading?: boolean;
 }>) {
   const top = useTopPad();
-  return <ScrollView style={styles.page} keyboardShouldPersistTaps="handled"
+  return <View style={[styles.page, { paddingTop: top }]}><ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled"
     refreshControl={refresh ? <RefreshControl refreshing={loading} onRefresh={refresh} /> : undefined}
-    contentContainerStyle={[styles.content, { paddingTop: top }]}>
+    contentContainerStyle={styles.content}>
     <StatusBar style="dark" />
     <View style={styles.row}>{back ? <BackButton /> : null}<Display size={28} style={{ flex: 1 }}>{title}</Display></View>
     {children}
-  </ScrollView>;
+  </ScrollView></View>;
 }
 
 export function ResourceState({ loading, error, retry, empty, emptyText = 'Nothing here yet.' }: {
   loading: boolean; error?: string; retry: () => void; empty?: boolean; emptyText?: string;
 }) {
-  if (loading) return <View style={styles.card}><ActivityIndicator color={c.blue} /><T align="center">Loading…</T></View>;
+  if (loading) return <SkeletonStack count={3} height={168} radius={20} />;
   if (error) return <View style={styles.card}><T accessibilityRole="alert" color={c.danger}>{error}</T><PrimaryButton label="Try again" onPress={retry} /></View>;
   if (empty) return <View style={styles.card}><T color={c.muted}>{emptyText}</T></View>;
   return null;

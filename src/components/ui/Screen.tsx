@@ -1,7 +1,6 @@
 import type { ReactElement, ReactNode } from "react";
 import {
   KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   View,
@@ -11,6 +10,7 @@ import {
 import { SafeAreaView, type Edge } from "react-native-safe-area-context";
 
 import { colors, spacing } from "@/theme";
+import { keyboardBehavior } from "@/ui/keyboard";
 
 type ScreenProps = {
   children: ReactNode;
@@ -47,7 +47,7 @@ export function Screen({
     <SafeAreaView style={styles.safe} edges={edges}>
       <KeyboardAvoidingView
         style={styles.fill}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={keyboardBehavior}
         keyboardVerticalOffset={keyboardVerticalOffset}
       >
         {body}

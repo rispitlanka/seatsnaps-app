@@ -27,12 +27,13 @@ export default function Category({ model, city }: { model: ListDesign; city: str
     return !active['Under LKR 5,000'] || item.raw.is_free || prices.some(price => price < 5000);
   });
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingBottom: 28 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28 }}>
       <StatusBar style="light" />
-      <View style={{ height: 188 + top, backgroundColor: c.ink, overflow: 'hidden' }}>
+      <View style={{ height: 188, backgroundColor: c.ink, overflow: 'hidden' }}>
         <Image source={hero} style={{ position: 'absolute', width: '100%', height: '100%' }} />
         <LinearGradient colors={['rgba(5,9,30,0.2)', 'rgba(5,9,30,0.85)']} style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} />
-        <View style={{ position: 'absolute', top, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={{ position: 'absolute', top: 12, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
           <BackButton variant="solid" />
           <CircleButton icon="search" label={`Search ${name.toLowerCase()}`} variant="solid" iconSize={19} stroke={2} onPress={() => router.push('/search')} />
         </View>
@@ -81,5 +82,6 @@ export default function Category({ model, city }: { model: ListDesign; city: str
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }

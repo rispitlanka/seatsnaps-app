@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Pressable, ScrollView, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -8,6 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { ratingTags, ratingWords } from '@/mocks/extras';
 import { img } from '@/ui/assets';
 import { Chip, CircleButton, Eyebrow, PrimaryButton, TextButton, goBack, inputText, useBottomPad, useTopPad } from '@/ui/components';
+import { keyboardBehavior } from '@/ui/keyboard';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
 
@@ -31,12 +32,12 @@ export default function RateEvent() {
   const [done, setDone] = useState(false);
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.white }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.ink, paddingTop: top }}>
       <StatusBar style="light" />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
-        <View style={{ height: 148 + top, backgroundColor: c.ink }}>
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+        <View style={{ height: 148, backgroundColor: c.ink }}>
           <Image source={img.festival} style={{ width: '100%', height: '100%' }} />
-          <View style={{ position: 'absolute', top, right: 20 }}>
+          <View style={{ position: 'absolute', top: 12, right: 20 }}>
             <CircleButton icon="close" label="Close" variant="solid" onPress={() => goBack()} />
           </View>
         </View>

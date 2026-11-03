@@ -44,11 +44,12 @@ export default function Venue({ model }: { model: VenueDesign }) {
   const [following, setFollowing] = useState(false);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingBottom: 28 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28 }}>
       <StatusBar style="light" />
-      <View style={{ height: 268 + top, backgroundColor: c.ink }}>
+      <View style={{ height: 268, backgroundColor: c.ink }}>
         <Image source={venue.img} accessibilityLabel={venue.name} style={{ width: '100%', height: '100%' }} />
-        <View style={{ position: 'absolute', top, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={{ position: 'absolute', top: 12, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
           <BackButton variant="solid" />
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <CircleButton icon="share" label="Share" variant="solid" iconSize={19} stroke={2} onPress={() => Share.share({ message: `${venue.name} ${venue.nameAccent} on SeatSnaps` })} />
@@ -189,5 +190,6 @@ export default function Venue({ model }: { model: VenueDesign }) {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }

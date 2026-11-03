@@ -15,6 +15,7 @@ import { usePrefs } from '@/providers/prefs';
 import { useSession } from '@/providers/session';
 import { img } from '@/ui/assets';
 import { Avatar, Chip, DateBadge, Dots, Rail, SearchLink, SectionHeader, Tap, useTopPad } from '@/ui/components';
+import { Skeleton, SkeletonStack } from '@/ui/skeleton';
 import { Icon } from '@/ui/Icon';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
@@ -45,9 +46,11 @@ export default function Home() {
     meta: `${events.filter(event => event.organization?.id === org.id).length} events`, bg: c.blue, fg: c.white,
   }));
   const initial = (user?.firstName || user?.username || user?.email || 'S').charAt(0).toUpperCase();
+  const showSkeleton = resource.loading && !resource.data;
 
   return (
-    <ScrollView refreshControl={<RefreshControl refreshing={resource.loading} onRefresh={resource.retry} />} style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingTop: top, paddingBottom: 28, gap: 28 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView refreshControl={<RefreshControl refreshing={resource.loading} onRefresh={resource.retry} />} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28, gap: 28 }}>
       <StatusBar style="dark" />
       <View style={{ paddingHorizontal: 20, gap: 18 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -68,23 +71,44 @@ export default function Home() {
         </View>
 
         <Display>{"What's on\n"}<Hl>tonight?</Hl></Display>
+      </View>
 
-        <View style={{ flexDirection: 'row', gap: 10 }}>
+      <View style={{ gap: 8 }}>
+        <View style={{ paddingHorizontal: 20, flexDirection: 'row', gap: 10 }}>
           <SearchLink placeholder="Search events, artists, venues" onPress={() => router.push('/search')} style={{ flex: 1 }} />
           <Tap accessibilityRole="button" accessibilityLabel="Filters" onPress={() => router.push('/results')} style={{ width: 52, height: 52, alignSelf: 'center', borderRadius: 16, backgroundColor: c.ink, alignItems: 'center', justifyContent: 'center' }}>
             <Icon name="sliders" size={20} color={c.white} />
           </Tap>
         </View>
+        {showSkeleton ? (
+          <View style={{ flexDirection: 'row', gap: 16, paddingHorizontal: 20 }}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <View key={index} style={{ alignItems: 'center', gap: 8 }}>
+                <Skeleton width={62} height={62} radius={20} />
+                <Skeleton width={48} height={10} radius={6} />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <Rail>
+            {homeCategories.map((cat) => (
+              <CategoryTile key={cat.slug} label={cat.label} icon={cat.icon} active={false} onPress={() => router.push({ pathname: '/explore/category/[slug]', params: { slug: cat.slug } })} />
+            ))}
+            <CategoryTile label="All" icon="grid" onPress={() => router.navigate('/explore')} />
+          </Rail>
+        )}
       </View>
 
-      <View style={{ paddingHorizontal: 20 }}><ResourceState {...resource} empty={!!resource.data && !events.length} emptyText={`No published events in ${city}. Try another city or All cities.`} /></View>
-      <Rail>
-        {homeCategories.map((cat, i) => (
-          <CategoryTile key={cat.slug} label={cat.label} icon={cat.icon} active={false} onPress={() => router.push({ pathname: '/explore/category/[slug]', params: { slug: cat.slug } })} />
-        ))}
-        <CategoryTile label="All" icon="grid" onPress={() => router.navigate('/explore')} />
-      </Rail>
+      {showSkeleton ? (
+        <View style={{ paddingHorizontal: 20 }}>
+          <SkeletonStack count={3} height={168} radius={22} />
+        </View>
+      ) : null}
+      {!showSkeleton && (resource.error || (resource.data && !events.length)) ? (
+        <View style={{ paddingHorizontal: 20 }}><ResourceState loading={false} error={resource.error} retry={resource.retry} empty={!!resource.data && !events.length} emptyText={`No published events in ${city}. Try another city or All cities.`} /></View>
+      ) : null}
 
+      {!showSkeleton ? <>
       <View style={{ gap: 14 }}>
         <View style={{ paddingHorizontal: 20 }}>
           <SectionHeader action="See all" onAction={() => router.push('/results')}>
@@ -213,7 +237,9 @@ export default function Home() {
           <T w={800} s={14}>Become an organiser</T>
         </Tap>
       </View>
+      </> : null}
     </ScrollView>
+    </View>
   );
 }
 

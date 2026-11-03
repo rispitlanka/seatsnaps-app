@@ -34,13 +34,14 @@ export default function BookingConfirmed() {
   const tier = cart.tier;
 
   return (
+    <View style={{ flex: 1, backgroundColor: c.heroTop, paddingTop: top }}>
     <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ flexGrow: 1 }}>
       <StatusBar style="light" />
-      <LinearGradient colors={[c.heroTop, c.heroBottom]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 418 + top, overflow: 'hidden' }}>
+      <LinearGradient colors={[c.heroTop, c.heroBottom]} style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 418, overflow: 'hidden' }}>
         <Image source={img.watermark} style={{ position: 'absolute', width: 360, height: 360, right: -130, top: -40, opacity: 0.08 }} />
       </LinearGradient>
 
-      <View style={{ paddingTop: top, paddingHorizontal: 20, gap: 22 }}>
+      <View style={{ paddingTop: 12, paddingHorizontal: 20, gap: 22 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Image source={img.wordmarkWhite} style={{ width: 148, height: 28 }} accessibilityLabel="SeatSnaps" />
           <CircleButton icon="close" label="Close" variant="glass" onPress={goHome} />
@@ -127,5 +128,6 @@ export default function BookingConfirmed() {
         <TextButton label="Back to home" onPress={goHome} />
       </View>
     </ScrollView>
+    </View>
   );
 }

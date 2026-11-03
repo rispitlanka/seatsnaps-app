@@ -3,11 +3,10 @@ import { ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { event } from '@/mocks/catalog';
 import { img } from '@/ui/assets';
-import { OutlineButton, PrimaryButton, Tap, useBottomPad } from '@/ui/components';
+import { OutlineButton, PrimaryButton, Tap, useBottomPad, useTopPad } from '@/ui/components';
 import { Icon } from '@/ui/Icon';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
@@ -25,13 +24,14 @@ const footerLinks = [
  */
 export default function SharedLink() {
   const { id = event.id, by = 'a friend' } = useLocalSearchParams<{ id?: string; by?: string }>();
-  const { top } = useSafeAreaInsets();
+  const top = useTopPad(0);
   const bottom = useBottomPad(28);
   const [banner, setBanner] = useState(true);
   const toEvent = () => router.push({ pathname: '/event/[id]', params: { id } });
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ flexGrow: 1, paddingTop: top }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }}>
       <StatusBar style="dark" />
       {banner ? (
         <View accessibilityLabel="Get the app" style={{ backgroundColor: c.white, borderBottomWidth: 1, borderBottomColor: c.line, paddingVertical: 12, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -106,5 +106,6 @@ export default function SharedLink() {
         <T s={12} color={c.onDarkMuted}>© 2026 SeatSnaps</T>
       </View>
     </ScrollView>
+    </View>
   );
 }

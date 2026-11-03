@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, View } from 'react-native';
+import { KeyboardAvoidingView, View } from 'react-native';
 
 import { Field, Tap, TextButton, goBack, useBottomPad } from '@/ui/components';
+import { keyboardBehavior } from '@/ui/keyboard';
 import { BottomSheet, ResultBadge } from '@/ui/states';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
@@ -20,7 +21,7 @@ export default function DeleteAccount() {
   const ok = typed.trim().toUpperCase() === 'DELETE';
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1 }}>
       <BottomSheet offset={120} label="Delete your account" backdrop="rgba(10,17,48,0.72)">
         <View style={{ flex: 1, paddingHorizontal: 24, paddingBottom: bottom, gap: 16 }}>
           <View style={{ marginTop: 22 }}>

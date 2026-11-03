@@ -155,12 +155,16 @@ export type Order = {
   buyer_phone?: string;
   items?: OrderItem[];
   tickets?: OrderTicket[];
+  created_at?: string;
   event?: {
     id: string;
     name?: string;
     slug?: string | null;
     start?: string;
     end?: string | null;
+    cover_image?: ImageAsset;
+    is_free?: boolean;
+    venue?: { id: string; name: string; slug?: string | null; address?: string | null; city?: string | null } | null;
   } | null;
 };
 

@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 
 import { img } from './assets';
-import { PrimaryButton, TextButton, useBottomPad } from './components';
+import { PrimaryButton, TextButton, useBottomPad, useTopPad } from './components';
 import { Display, T } from './Text';
 import { c } from './tokens';
 
@@ -31,9 +31,10 @@ export function PermissionScreen({
   secondary: string;
   onSecondary: () => void;
 }) {
+  const top = useTopPad();
   const bottom = useBottomPad(34);
   return (
-    <View style={{ flex: 1, backgroundColor: c.white }}>
+    <View style={{ flex: 1, backgroundColor: c.heroTop, paddingTop: top }}>
       <StatusBar style="light" />
       <LinearGradient colors={[c.heroTop, c.heroBottom]} style={{ height: 420, borderBottomLeftRadius: 36, borderBottomRightRadius: 36, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', ...heroStyle }}>
         <Image source={img.watermark} style={{ position: 'absolute', width: 380, height: 380, opacity: 0.08, ...watermark }} />

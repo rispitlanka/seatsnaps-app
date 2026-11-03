@@ -1,121 +1,184 @@
+import { useCallback, useState } from 'react';
 import { View } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 
-import { event } from '@/mocks/catalog';
-import { useSession } from '@/providers/session';
-import { Eyebrow, Tap, TextButton } from '@/ui/components';
+import { bookedLabel, orderStatusLabel, orderWhen, paymentLines } from '@/features/tickets/present';
+import { getOrder } from '@/lib/api/bookings';
+import { getEventById } from '@/lib/api/events';
+import { toErrorMessage } from '@/lib/api/errors';
+import { eventCoverUrl, formatMoney, parseMoney } from '@/lib/event-display';
+import { Eyebrow, PrimaryButton, Tap, TextButton } from '@/ui/components';
 import { Icon } from '@/ui/Icon';
 import { ListCard, SettingsScreen } from '@/ui/settings';
+import { SkeletonStack } from '@/ui/skeleton';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
+import type { Order, OrderTicket } from '@/types/booking';
 
-function SeatTile({ seat, mine }: { seat: string; mine?: boolean }) {
+function SeatTile({ seat }: { seat: string }) {
   return (
-    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: mine ? c.blue : c.blueSoft, alignItems: 'center', justifyContent: 'center' }}>
-      <T w={800} s={14} color={mine ? c.white : c.blueDeep}>{seat}</T>
+    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: c.blue, alignItems: 'center', justifyContent: 'center' }}>
+      <T w={800} s={seat.length > 3 ? 11 : 14} color={c.white}>{seat}</T>
     </View>
-  );
-}
-
-function Pill({ label, onPress, dark }: { label: string; onPress: () => void; dark?: boolean }) {
-  return (
-    <Tap accessibilityRole="button" onPress={onPress} style={{ height: dark ? 36 : 38, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: dark ? c.ink : c.white, borderWidth: dark ? 0 : 1, borderColor: c.line }}>
-      <T w={dark ? 800 : 700} s={13} color={dark ? c.white : c.ink}>{label}</T>
-    </Tap>
   );
 }
 
 function Line({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <T w={bold ? 800 : 400} s={14} color={bold ? c.ink : c.ink2}>{label}</T>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+      <T w={bold ? 800 : 400} s={14} color={bold ? c.ink : c.ink2} style={{ flex: 1 }}>{label}</T>
       <T w={bold ? 800 : 700} s={14}>{value}</T>
     </View>
   );
 }
 
+function ticketLabel(ticket: OrderTicket) {
+  return ticket.seat?.code ?? 'GA';
+}
+
 /** J1 Booking detail. */
 export default function BookingDetail() {
-  const { user } = useSession();
-  const name = [user?.firstName, user?.lastName].filter(Boolean).join(' ') || 'Ramesh Ram';
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [order, setOrder] = useState<Order | null>(null);
+  const [cover, setCover] = useState<string | null>(null);
+  const [venueName, setVenueName] = useState<string | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = useCallback(async () => {
+    if (!id) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const next = await getOrder(id);
+      setOrder(next);
+      let nextCover = next.event ? eventCoverUrl(next.event) : null;
+      let nextVenue = next.event?.venue ?? null;
+      if (!nextCover || !nextVenue?.name) {
+        try {
+          const event = await getEventById(next.event_id);
+          nextCover = nextCover ?? eventCoverUrl(event);
+          nextVenue = nextVenue ?? event.venue ?? null;
+        } catch {
+          // The order still renders without the public event page.
+        }
+      }
+      setCover(nextCover);
+      setVenueName(nextVenue?.name ?? null);
+      setVenueId(nextVenue?.id ?? null);
+      setError('');
+    } catch (caught) {
+      setError(toErrorMessage(caught, 'Could not load this booking.'));
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+
+  useFocusEffect(useCallback(() => {
+    void load();
+  }, [load]));
+
+  if (loading && !order) {
+    return (
+      <SettingsScreen>
+        <SkeletonStack count={3} height={96} radius={20} />
+      </SettingsScreen>
+    );
+  }
+
+  if (!order) {
+    return (
+      <SettingsScreen>
+        <Display>Your <Hl>booking.</Hl></Display>
+        <T accessibilityRole="alert" color={c.danger}>{error || 'This booking could not be found.'}</T>
+        <PrimaryButton label="Try again" onPress={() => void load()} />
+      </SettingsScreen>
+    );
+  }
+
+  const status = orderStatusLabel(order.status);
+  const statusColor = status.tone === 'success' ? c.success : status.tone === 'danger' ? c.error : c.blueDeep;
+  const tickets = order.tickets ?? [];
+  const lines = paymentLines(order);
+  const discount = parseMoney(order.discount_total) ?? 0;
+  const booked = bookedLabel(order.created_at);
+  const total = order.event?.is_free ? 'Free' : formatMoney(order.total) ?? 'Free';
 
   return (
     <SettingsScreen>
       <View style={{ gap: 8 }}>
-        <View style={{ alignSelf: 'flex-start', height: 28, paddingHorizontal: 10, borderRadius: 999, backgroundColor: c.successSoft, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-          <Icon name="check" size={13} color={c.success} stroke={3} />
-          <T w={800} s={12} color={c.success}>Confirmed</T>
+        <View style={{ alignSelf: 'flex-start', height: 28, paddingHorizontal: 10, borderRadius: 999, backgroundColor: status.tone === 'success' ? c.successSoft : c.blueSoft, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {status.tone === 'success' ? <Icon name="check" size={13} color={statusColor} stroke={3} /> : null}
+          <T w={800} s={12} color={statusColor}>{status.label}</T>
         </View>
         <Display>Your <Hl>booking.</Hl></Display>
-        <T s={13} color={c.muted}>Order SS-2410-[BOOKING ID] · booked 14 Oct, 3:12 PM</T>
+        <T s={13} color={c.muted}>
+          {order.order_number ? `Order ${order.order_number}` : 'Order'}
+          {booked ? ` · booked ${booked}` : ''}
+        </T>
       </View>
 
-      <Tap accessibilityRole="button" accessibilityLabel={event.fullName} onPress={() => router.push({ pathname: '/event/[id]', params: { id: event.id } })} style={{ flexDirection: 'row', gap: 12, padding: 8, backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 20 }}>
-        <Image source={event.img} style={{ width: 84, height: 84, borderRadius: 14 }} />
+      <Tap accessibilityRole="button" accessibilityLabel={order.event?.name ?? 'Event'} onPress={() => router.push({ pathname: '/event/[id]', params: { id: order.event?.slug ?? order.event_id } })} style={{ flexDirection: 'row', gap: 12, padding: 8, backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 20 }}>
+        {cover ? (
+          <Image source={{ uri: cover }} style={{ width: 84, height: 84, borderRadius: 14 }} contentFit="cover" />
+        ) : (
+          <View style={{ width: 84, height: 84, borderRadius: 14, backgroundColor: c.blueSoft }} />
+        )}
         <View style={{ flex: 1, gap: 3, paddingVertical: 4 }}>
-          <T w={800} s={16}>{event.fullName}</T>
-          <T s={12} color={c.muted}>Sat 24 Oct · 7:30 PM (doors 6:45)</T>
-          <T s={12} color={c.muted}>{event.venue}</T>
+          <T w={800} s={16}>{order.event?.name ?? 'Event'}</T>
+          <T s={12} color={c.muted}>{orderWhen(order, venueName)}</T>
         </View>
       </Tap>
 
       <View style={{ gap: 10 }}>
-        <Eyebrow>TICKETS · 2</Eyebrow>
+        <Eyebrow>TICKETS · {Math.max(tickets.length, order.items?.length ?? 0)}</Eyebrow>
         <ListCard>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.lineSoft }}>
-            <SeatTile seat="G5" mine />
-            <View style={{ flex: 1, gap: 2 }}>
-              <T w={800} s={15}>Gold · {name}</T>
-              <T s={12} color={c.muted}>Yours</T>
+          {(tickets.length ? tickets : []).map((ticket, index) => (
+            <View key={ticket.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12, borderBottomWidth: index === tickets.length - 1 ? 0 : 1, borderBottomColor: c.lineSoft }}>
+              <SeatTile seat={ticketLabel(ticket)} />
+              <View style={{ flex: 1, gap: 2 }}>
+                <T w={800} s={15}>{ticket.ticket_category?.name ?? 'Ticket'} · {ticket.reference_id}</T>
+                <T s={12} color={c.muted}>{ticket.check_in ? 'Checked in' : order.buyer_name || 'Yours'}</T>
+              </View>
+              {order.status === 'PAID' ? (
+                <Tap accessibilityRole="button" onPress={() => router.push({ pathname: '/me/booking/gate', params: { orderId: order.id, ticketId: ticket.id } })} style={{ height: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: c.ink }}>
+                  <T w={800} s={13} color={c.white}>Show QR</T>
+                </Tap>
+              ) : null}
             </View>
-            <Pill dark label="Show QR" onPress={() => router.push('/me/booking/gate')} />
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
-            <SeatTile seat="G6" />
-            <View style={{ flex: 1, gap: 2 }}>
-              <T w={800} s={15}>Gold · Guest</T>
-              <T s={12} color={c.muted}>Not sent yet</T>
+          ))}
+          {tickets.length === 0 ? (
+            <View style={{ paddingVertical: 12 }}>
+              <T s={14} color={c.ink2}>Tickets appear here once the order is confirmed.</T>
             </View>
-            <Pill label="Send" onPress={() => router.push('/me/booking/send')} />
-          </View>
+          ) : null}
         </ListCard>
       </View>
 
       <View style={{ gap: 10 }}>
         <Eyebrow>PAYMENT</Eyebrow>
         <View style={{ backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, gap: 10 }}>
-          <Line label="2 × Gold" value="LKR 10,000" />
-          <Line label="Booking fee" value="LKR 300" />
+          {lines.map((line) => <Line key={line.label} label={line.label} value={line.value} />)}
+          {discount > 0 ? <Line label={order.promo_code ? `Promo · ${order.promo_code}` : 'Discount'} value={`− ${formatMoney(order.discount_total)}`} /> : null}
           <View style={{ paddingTop: 10, borderTopWidth: 1, borderTopColor: c.lineSoft }}>
-            <Line label="Paid · Card •••• [last 4]" value="LKR 10,300" bold />
+            <Line label={order.status === 'PAID' ? 'Paid' : 'Total'} value={total} bold />
           </View>
-          <Tap accessibilityRole="link" style={{ alignSelf: 'flex-start', minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Icon name="download" size={16} color={c.blue} stroke={2.2} />
-            <T w={800} s={14} color={c.blue}>Download invoice (PDF)</T>
-          </Tap>
         </View>
       </View>
 
-      <View style={{ gap: 10 }}>
-        <Eyebrow>REFUND STATUS</Eyebrow>
-        <View style={{ backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 20, paddingVertical: 14, paddingHorizontal: 16, gap: 6 }}>
-          <T w={800} s={15}>No refund requested</T>
-          <T s={13} lh={1.5} color={c.ink2}>Refundable until Thu 22 Oct, 7:30 PM (48 hours before the event).</T>
-        </View>
-      </View>
+      {order.status === 'PENDING_PAYMENT' ? (
+        <PrimaryButton label="Finish payment" onPress={() => router.push({ pathname: '/order/[id]', params: { id: order.id } })} />
+      ) : null}
 
-      <View style={{ flexDirection: 'row', gap: 10 }}>
-        {['Add to calendar', 'Directions'].map(label => (
-          <Tap key={label} accessibilityRole="button" onPress={label === 'Directions' ? () => router.push({ pathname: '/explore/venue/[id]', params: { id: 'nelum-pokuna-theatre' } }) : undefined} style={{ flex: 1, height: 50, borderRadius: 999, backgroundColor: c.white, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
-            <T w={700} s={14}>{label}</T>
-          </Tap>
-        ))}
-      </View>
-      <View style={{ gap: 4 }}>
-        <TextButton label="Cancel booking & request refund" w={800} color={c.error} onPress={() => router.push('/me/booking/refund')} />
-        <TextButton label="Get help with this booking" color={c.blue} s={14} height={40} onPress={() => router.push('/contact')} />
-      </View>
+      {venueId ? (
+        <Tap accessibilityRole="button" onPress={() => router.push({ pathname: '/explore/venue/[id]', params: { id: venueId } })} style={{ height: 50, borderRadius: 999, backgroundColor: c.white, borderWidth: 1, borderColor: c.line, alignItems: 'center', justifyContent: 'center' }}>
+          <T w={700} s={14}>Directions</T>
+        </Tap>
+      ) : null}
+      <TextButton label="Get help with this booking" color={c.blue} s={14} height={40} onPress={() => router.push('/contact')} />
     </SettingsScreen>
   );
 }

@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputInstance,
   type TextInputKeyPressEvent,
 } from "react-native";
 
@@ -18,7 +19,7 @@ type OtpInputProps = {
 };
 
 export function OtpInput({ value, onChange, error }: OtpInputProps) {
-  const refs = useRef<Array<TextInput | null>>([]);
+  const refs = useRef<Array<TextInputInstance | null>>([]);
   const digits = Array.from({ length: OTP_LENGTH }, (_, index) => value[index] ?? "");
 
   function setDigit(index: number, raw: string) {

@@ -39,7 +39,8 @@ export default function Profile() {
   const initials = name.split(/\s+/).map(p => p.charAt(0)).join('').slice(0, 2).toUpperCase();
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 28, gap: 18 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 28, gap: 18 }}>
       <StatusBar style="dark" />
       <Display>My <Hl>profile.</Hl></Display>
 
@@ -79,5 +80,6 @@ export default function Profile() {
       </Tap>
       <T s={12} color={c.muted} align="center">SeatSnaps · version [x.y.z]</T>
     </ScrollView>
+    </View>
   );
 }

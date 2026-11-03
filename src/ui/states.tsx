@@ -54,16 +54,18 @@ export function BottomSheet({
 export function StatusHero({ source, height, pill, dim, gray, alt }: { source: ImageSource; height: number; pill?: ReactNode; dim?: number; gray?: number; alt?: string }) {
   const top = useTopPad();
   return (
-    <View style={{ height: height - 52 + top, backgroundColor: c.ink }}>
+    <View style={{ paddingTop: top, backgroundColor: c.ink }}>
       <StatusBar style="light" />
+      <View style={{ height: height - 52, backgroundColor: c.ink }}>
       {/* Grayscale renders on web and Android; iOS shows the dimmed photo. */}
       <View style={{ flex: 1, opacity: dim ?? 1, filter: gray ? `grayscale(${gray})` : undefined }}>
         <Image source={source} accessibilityLabel={alt} style={{ width: '100%', height: '100%' }} />
       </View>
-      <View style={{ position: 'absolute', top, left: 20 }}>
+      <View style={{ position: 'absolute', top: 12, left: 20 }}>
         <BackButton variant="solid" />
       </View>
       {pill ? <View style={{ position: 'absolute', left: 20, bottom: 44 }}>{pill}</View> : null}
+      </View>
     </View>
   );
 }

@@ -7,7 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import type { ListDesign } from '../design-model';
 import type { ImageSource } from 'expo-image';
 
-import { BackButton, Chip, DateBadge, Eyebrow, Rail, Tap, UnderlineTabs, useTopPad } from '@/ui/components';
+import { BackButton, Chip, DateBadge, Eyebrow, Rail, Tap, UnderlineTabs, useBottomPad, useTopPad } from '@/ui/components';
 import { Icon } from '@/ui/Icon';
 import { OrganiserRow, VenueRow } from '@/ui/rows';
 import { ResultBadge } from '@/ui/states';
@@ -45,6 +45,7 @@ function PopularRow({ img: source, date, name, price, id }: { img: ImageSource |
 /** H3 Search · no results. */
 function NoResults({ q, model }: { q: string; model: ListDesign }) {
   const top = useTopPad();
+  const bottom = useBottomPad();
   const search = (term: string) => router.replace({ pathname: '/results', params: { q: term } });
   return (
     <View style={{ flex: 1, backgroundColor: c.page }}>
@@ -56,7 +57,7 @@ function NoResults({ q, model }: { q: string; model: ListDesign }) {
           <T w={700} s={15}>{q}</T>
         </Tap>
       </View>
-      <ScrollView contentContainerStyle={{ paddingTop: 26, paddingHorizontal: 20, paddingBottom: 30, gap: 22 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 26, paddingHorizontal: 20, paddingBottom: bottom, gap: 22 }}>
         <View style={{ backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 24, paddingVertical: 30, paddingHorizontal: 22, alignItems: 'center', gap: 12 }}>
           <ResultBadge icon="searchMinus" bg={c.blueSoft} color={c.blue} size={72} iconSize={30} stroke={2} />
           <T w={800} s={18} align="center">No results for “{q}”</T>
@@ -95,6 +96,7 @@ export default function Results({ model, q, filters }: { model: ListDesign; q: s
   const resultVenues = model.resultVenues;
   const first = model.resultEvents[0];
   const top = useTopPad();
+  const bottom = useBottomPad();
   const [tab, setTab] = useState('All');
   const [showFilters, setShowFilters] = useState(false);
   if (!model.resultEvents.length && !model.resultVenues.length && !model.organisers.length) return <NoResults q={q} model={model} />;
@@ -116,7 +118,7 @@ export default function Results({ model, q, filters }: { model: ListDesign; q: s
         <UnderlineTabs options={['All', `Events (${model.resultEvents.length})`, `Organisers (${model.organisers.length})`, `Venues (${resultVenues.length})`]} value={tab} onChange={setTab} gap={22} s={14} />
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: 28, gap: 22 }}>
+      <ScrollView contentContainerStyle={{ paddingTop: 16, paddingHorizontal: 20, paddingBottom: bottom, gap: 22 }}>
         {(tab === 'All' || tab.startsWith('Events')) && first ? (
           <View style={{ gap: 12 }}>
             <Eyebrow>TOP RESULT</Eyebrow>

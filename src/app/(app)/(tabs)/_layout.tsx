@@ -1,3 +1,4 @@
+import { type ComponentProps } from 'react';
 import { Pressable, View } from 'react-native';
 import { TabList, TabSlot, TabTrigger, Tabs, type TabTriggerSlotProps } from 'expo-router/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -42,11 +43,12 @@ export default function TabsLayout() {
   );
 }
 
-function TabButton({ isFocused, label, icon, ...rest }: TabTriggerSlotProps & { label: string; icon: IconName }) {
+function TabButton({ isFocused, label, icon, ref, ...rest }: TabTriggerSlotProps & { label: string; icon: IconName }) {
   const color = isFocused ? c.blue : c.muted;
   return (
     <Pressable
       {...rest}
+      ref={ref as ComponentProps<typeof Pressable>['ref']}
       accessibilityRole="tab"
       accessibilityState={{ selected: !!isFocused }}
       style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }}

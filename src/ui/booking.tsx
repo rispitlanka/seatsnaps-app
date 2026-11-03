@@ -5,7 +5,7 @@ import { Image, type ImageSource } from 'expo-image';
 import { StatusBar } from 'expo-status-bar';
 
 import { useCountdown } from '@/hooks/useCountdown';
-import { useCart } from '@/providers/cart';
+import { useBooking } from '@/providers/booking';
 
 import { BackButton, BookingSteps, TimerPill, useTopPad } from './components';
 import { T } from './Text';
@@ -13,7 +13,8 @@ import { c } from './tokens';
 
 /** Live hold countdown pill shown on seats and checkout. */
 export function HoldTimer() {
-  const { holdUntil } = useCart();
+  const { hold } = useBooking();
+  const holdUntil = hold?.expiresAt ?? null;
   const ms = useCountdown(holdUntil);
   const expired = !!holdUntil && ms <= 0 && Date.parse(holdUntil) <= Date.now();
   // Only the screen on top reacts, so a seat map further back can't navigate.

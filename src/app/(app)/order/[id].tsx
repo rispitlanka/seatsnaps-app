@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 
@@ -10,6 +10,7 @@ import { getOrder } from "@/lib/api/bookings";
 import { toErrorMessage } from "@/lib/api/errors";
 import { formatMoney } from "@/lib/event-display";
 import { colors, radii, spacing, typography } from "@/theme";
+import { SkeletonStack } from "@/ui/skeleton";
 import type { Order } from "@/types/booking";
 
 export default function OrderStatusScreen() {
@@ -55,7 +56,7 @@ export default function OrderStatusScreen() {
 
       {!order && !error ? (
         <View style={styles.center}>
-          <ActivityIndicator color={colors.accent} />
+          <SkeletonStack count={3} height={72} radius={16} />
           <Text style={styles.muted}>Checking payment…</Text>
         </View>
       ) : null}

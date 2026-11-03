@@ -78,7 +78,10 @@ export function NativeDesign(props: Props): ReactNode {
   if (['script','style','helmet','head','option'].includes(tag)) return null;
   if (tag === 'br') return <Text>{'\n'}</Text>;
   const css = String(resolve(attrs.style, scope) || '');
-  const { view, text, gradient, columns, declarations } = nativeStyle(css, inherited);
+  const parsed = nativeStyle(css, inherited);
+  const text: { -readonly [K in keyof TextStyle]: TextStyle[K] } = { ...parsed.text };
+  const { gradient, columns, declarations } = parsed;
+  const view = parsed.view;
   if(tag==='a' && !declarations.color && screen.linkColor) text.color=screen.linkColor;
   const children = expand(node.children, scope, path);
   const value = (name: string) => resolve(attrs[name],scope);
@@ -86,7 +89,7 @@ export function NativeDesign(props: Props): ReactNode {
   const label = nodeLabel(node,scope);
   const callback = value('sc-camel-on-click');
   const interactive = tag === 'a' || tag === 'button' || typeof callback === 'function';
-  const style: ViewStyle = { ...view, ...override };
+  const style: { -readonly [K in keyof ViewStyle]: ViewStyle[K] } = { ...view, ...override };
   if(screen.id==='D4' && tag==='button' && /^Seat [A-Z]\d/.test(label)) style.width=Math.min(23,Math.max(14,((scope.$width || 390)-160)/10));
   if(screen.id==='L2' && attrs['aria-labelledby']==='vlabel') return <VerificationCode />;
   const content = (childInline = false): ReactNode => children.map(({node: child,scope: childScope,key}) => (

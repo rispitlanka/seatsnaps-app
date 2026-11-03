@@ -1,30 +1,38 @@
 import { forwardRef, type ReactNode } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
+  StatusBar as RNStatusBar,
   TextInput,
   View,
   type PressableProps,
+  type TextInputInstance,
   type TextInputProps,
   type ViewStyle,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { initialWindowMetrics, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { GoogleIcon, Icon, type IconName } from './Icon';
 import { T } from './Text';
 import { c, font } from './tokens';
 
-/** Top padding: the boards use 52px under a 44pt status bar. */
+/** Space below the status bar or notch. Never smaller than the system status bar. */
 export function useTopPad(extra = 8) {
   const { top } = useSafeAreaInsets();
-  return Math.max(44 + extra, top + extra);
+  const androidBar = Platform.OS === 'android' ? (RNStatusBar.currentHeight ?? 0) : 0;
+  const measured = Math.max(top, initialWindowMetrics?.insets.top ?? 0, Constants.statusBarHeight ?? 0, androidBar);
+  // Android 15 draws edge to edge and can report 0 for every source above.
+  const safeTop = measured > 0 ? measured : Platform.OS === 'android' ? 48 : Platform.OS === 'ios' ? 47 : 0;
+  return safeTop + extra;
 }
 
-/** Bottom padding for fixed footers: the boards use 30px. */
-export function useBottomPad(base = 30) {
+/** Space above the home indicator, from react-native-safe-area-context. */
+export function useBottomPad(extra = 16) {
   const { bottom } = useSafeAreaInsets();
-  return Math.max(base, bottom + 12);
+  return bottom + extra;
 }
 
 export function goBack(fallback: Parameters<typeof router.replace>[0] = '/') {
@@ -206,7 +214,7 @@ type FieldProps = TextInputProps & {
 };
 
 /** Labelled input matching the board fields (#F7F8FB fill, 14px radius). */
-export const Field = forwardRef<TextInput, FieldProps>(function Field(
+export const Field = forwardRef<TextInputInstance, FieldProps>(function Field(
   { label, labelSize = 13, height = 50, icon, prefix, segment, trailing, background = c.field, radius = 14, hint, invalid, style, ...input },
   ref,
 ) {

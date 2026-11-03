@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { BackButton, useBottomPad, useTopPad } from './components';
+import { keyboardBehavior } from './keyboard';
 import { T } from './Text';
 import { c } from './tokens';
 
@@ -26,9 +27,9 @@ export function FormScreen({ gap, children }: { gap: number; children: ReactNode
   const top = useTopPad();
   const bottom = useBottomPad();
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.white }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.white, paddingTop: top }}>
       <StatusBar style="dark" />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingTop: top, paddingHorizontal: 24, paddingBottom: bottom, gap }}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 24, paddingBottom: bottom, gap }}>
         {children}
       </ScrollView>
     </KeyboardAvoidingView>

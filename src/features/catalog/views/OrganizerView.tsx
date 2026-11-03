@@ -18,11 +18,12 @@ export default function OrganiserProfile({ model }: { model: OrganizerDesign }) 
   const [tab, setTab] = useState('Events');
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingBottom: 28 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28 }}>
       <StatusBar style="light" />
-      <View style={{ height: 148 + top, backgroundColor: c.ink }}>
+      <View style={{ height: 148, backgroundColor: c.ink }}>
         <Image source={model.hero} style={{ width: '100%', height: '100%' }} />
-        <View style={{ position: 'absolute', top, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+        <View style={{ position: 'absolute', top: 12, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
           <BackButton variant="solid" />
           <CircleButton icon="share" label="Share" variant="solid" iconSize={19} stroke={2} />
         </View>
@@ -81,5 +82,6 @@ export default function OrganiserProfile({ model }: { model: OrganizerDesign }) 
         ))}
       </View>
     </ScrollView>
+    </View>
   );
 }

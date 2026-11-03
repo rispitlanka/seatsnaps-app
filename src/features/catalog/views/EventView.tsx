@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
+import { bookingDestination } from '@/lib/booking';
 import type { EventDesign } from '../design-model';
 import { Avatar, BackButton, CircleButton, Footer, PrimaryButton, Rail, SectionHeader, Tap, useTopPad } from '@/ui/components';
 import { Icon } from '@/ui/Icon';
@@ -20,7 +21,7 @@ const card = { backgroundColor: c.white, borderWidth: 1, borderColor: c.line, bo
 /** D1 Event detail. */
 export default function EventDetail({ model }: { model: EventDesign }) {
   const { event, tiers, raw } = model;
-  const id = raw.id;
+  const tickets = bookingDestination(raw);
   const top = useTopPad();
   const [saved, setSaved] = useState(false);
   const [following, setFollowing] = useState(false);
@@ -28,12 +29,12 @@ export default function EventDetail({ model }: { model: EventDesign }) {
   const toOrganiser = () => router.push({ pathname: '/explore/organiser/[id]', params: { id: event.organiser.id } });
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.page }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={{ paddingBottom: 28 }}>
-        <View style={{ height: 328 + top, backgroundColor: c.ink }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28 }}>
+        <View style={{ height: 328, backgroundColor: c.ink }}>
           <Image source={event.img} accessibilityLabel={event.fullName} style={{ width: '100%', height: '100%' }} />
-          <View style={{ position: 'absolute', top, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
+          <View style={{ position: 'absolute', top: 12, left: 20, right: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
             <BackButton variant="solid" />
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <CircleButton icon="share" label="Share" variant="solid" iconSize={19} stroke={2} onPress={() => Share.share({ message: `${event.fullName} on SeatSnaps` })} />
@@ -218,7 +219,7 @@ export default function EventDetail({ model }: { model: EventDesign }) {
             <T s={12} color={c.muted}>From</T>
             <T w={800} s={20} ls={-0.02}>{event.fromPrice}</T>
           </View>
-          <PrimaryButton label="Get tickets" disabled style={{ flex: 1, maxWidth: 210 }} />
+          <PrimaryButton label="Get tickets" disabled={!tickets} onPress={() => tickets && router.push(tickets)} style={{ flex: 1, maxWidth: 210 }} />
         </View>
       </Footer>
     </View>

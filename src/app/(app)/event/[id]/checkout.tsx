@@ -1,171 +1,359 @@
-import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 
-import { BOOKING_FEE, PROMO_DISCOUNT, event, lkr, paymentMethods } from '@/mocks/catalog';
-import { promoErrors, unknownPromo } from '@/mocks/extras';
-import { useCart } from '@/providers/cart';
+import { BookingStatus } from '@/features/booking/BookingStatus';
+import { placeHold } from '@/features/booking/place-hold';
+import { useBookableEvent } from '@/features/booking/useBookableEvent';
+import { createOrder, releaseHold } from '@/lib/api/bookings';
+import { toErrorMessage } from '@/lib/api/errors';
+import { fieldOptions, quoteHold, selectionFromHold } from '@/lib/booking';
+import { eventCoverUrl, formatEventWhen, formatMoney } from '@/lib/event-display';
+import { useBooking } from '@/providers/booking';
+import { useSession } from '@/providers/session';
 import { BookingHeader } from '@/ui/booking';
-import { Checkbox, Eyebrow, Field, Footer, PrimaryButton, Tap, inputText } from '@/ui/components';
-import { Icon } from '@/ui/Icon';
+import { keyboardBehavior } from '@/ui/keyboard';
+import { Checkbox, Chip, Eyebrow, Field, Footer, PrimaryButton } from '@/ui/components';
 import { Display, Hl, T } from '@/ui/Text';
-import { c, font } from '@/ui/tokens';
-import { InvalidPromoCheckout } from '@/components/booking/InvalidPromoCheckout';
+import { c } from '@/ui/tokens';
+import type { FormResponseInput, Hold } from '@/types/booking';
+import type { BookingFormField } from '@/types/event';
+
+const PROMO = /^[A-Za-z0-9]{4,12}$/;
 
 function Line({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-      <T s={14} color={color ?? c.ink2}>{label}</T>
+    <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12 }}>
+      <T s={14} color={color ?? c.ink2} style={{ flex: 1 }}>{label}</T>
       <T w={700} s={14} color={color}>{value}</T>
     </View>
   );
 }
 
-/** D5 Checkout. */
+/** Buyer details, promo, and PayHere. The hold is released if checkout is abandoned. */
 export default function Checkout() {
-  const cart = useCart();
-  const [agreed, setAgreed] = useState(true);
-  const [promoCode, setPromoCode] = useState('');
-  const [promoError, setPromoError] = useState<[string, string] | null>(null);
-  const applyPromo = () => {
-    if (cart.promo) {
-      cart.setPromo(false);
-      setPromoCode('');
+  const { id = '' } = useLocalSearchParams<{ id: string }>();
+  const navigation = useNavigation();
+  const { user } = useSession();
+  const { event, error: eventError, loading, reload } = useBookableEvent(id);
+  const { hold, setHold, promoCode, setPromoCode, setPayhere, clearSelection } = useBooking();
+  const [fullName, setFullName] = useState([user?.firstName, user?.lastName].filter(Boolean).join(' '));
+  const [email, setEmail] = useState(user?.email ?? '');
+  const [phone, setPhone] = useState(user?.phone ?? '');
+  const [answers, setAnswers] = useState<Record<string, string | number | string[]>>({});
+  const [draftPromo, setDraftPromo] = useState(promoCode);
+  const [promoError, setPromoError] = useState('');
+  const [error, setError] = useState('');
+  const [applying, setApplying] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
       return;
     }
-    const code = promoCode.trim().toUpperCase();
-    if (!code || code === 'EARLYBIRD') {
-      setPromoCode('EARLYBIRD');
-      setPromoError(null);
-      cart.setPromo(true);
-    } else {
-      setPromoError(promoErrors[code] ?? unknownPromo);
-    }
-  };
-  const [cardNumber, setCardNumber] = useState('');
-  // Sample cards starting with 4000 are declined so the failure screen (I4) can be reviewed.
-  const declined = cart.method === 'card' && cardNumber.replace(/\s/g, '').startsWith('4000');
-  const seats = [...cart.seats].sort().join(', ');
+    setFullName((current) => current || [user.firstName, user.lastName].filter(Boolean).join(' '));
+    setEmail((current) => current || user.email || '');
+    setPhone((current) => current || user.phone || '');
+  }, [user]);
+  const orderStarted = useRef(false);
+  const replacingHold = useRef(false);
+  const holdRef = useRef<Hold | null>(hold);
+  holdRef.current = hold;
 
-  if (promoError) return <InvalidPromoCheckout code={promoCode} error={promoError}
-    onChange={setPromoCode} onApply={applyPromo} onContinue={() => setPromoError(null)} />;
+  useEffect(() => {
+    const unsubscribe = (navigation as { addListener: (event: 'beforeRemove', listener: () => void) => () => void }).addListener('beforeRemove', () => {
+      const current = holdRef.current;
+      if (!orderStarted.current && !replacingHold.current && current) {
+        void releaseHold(current.id).catch(() => undefined);
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    if (loading || !event || hold || replacingHold.current || orderStarted.current) {
+      return;
+    }
+    router.replace({ pathname: '/event/[id]', params: { id: event.id } });
+  }, [event, hold, loading]);
+
+  const fields = useMemo(
+    () => [...(event?.booking_form_fields ?? [])].filter((field) => field.type !== 'IMAGE').sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0)),
+    [event],
+  );
+
+  if (!event || !hold) {
+    return <BookingStatus title="Checkout" loading={loading} error={eventError} onRetry={() => void reload()} />;
+  }
+
+  const quote = quoteHold(hold, event);
+  const cover = eventCoverUrl(event);
+  const applied = hold.offer?.promo_code;
+  const totalLabel = formatMoney(String(quote.total)) ?? 'LKR 0';
+  const free = event.is_free || quote.total === 0;
+
+  async function replaceHold(nextPromo?: string) {
+    const current = holdRef.current;
+    if (!current || !event) {
+      return;
+    }
+    const selection = selectionFromHold(current);
+    replacingHold.current = true;
+    holdRef.current = null;
+    setHold(null);
+    try {
+      await releaseHold(current.id).catch(() => undefined);
+      const next = await placeHold({
+        eventId: event.id,
+        seatIds: selection.seatIds,
+        standing: selection.standing,
+        promoCode: nextPromo,
+      });
+      holdRef.current = next;
+      setHold(next);
+      setPromoCode(nextPromo ?? '');
+      setDraftPromo(next.offer?.promo_code ?? nextPromo ?? '');
+      setPromoError('');
+    } catch (caught) {
+      if (nextPromo) {
+        try {
+          const restored = await placeHold({
+            eventId: event.id,
+            seatIds: selection.seatIds,
+            standing: selection.standing,
+          });
+          holdRef.current = restored;
+          setHold(restored);
+          setPromoCode('');
+        } catch {
+          setError('Your tickets were released. Go back and pick them again.');
+        }
+      }
+      throw caught;
+    } finally {
+      replacingHold.current = false;
+    }
+  }
+
+  async function applyPromo() {
+    if (applied) {
+      setApplying(true);
+      setPromoError('');
+      try {
+        await replaceHold();
+      } catch (caught) {
+        setPromoError(toErrorMessage(caught, 'Could not remove that promo.'));
+      } finally {
+        setApplying(false);
+      }
+      return;
+    }
+    const code = draftPromo.trim().toUpperCase();
+    if (!PROMO.test(code)) {
+      setPromoError('Use 4–12 letters or digits.');
+      return;
+    }
+    setApplying(true);
+    setPromoError('');
+    try {
+      await replaceHold(code);
+    } catch (caught) {
+      setPromoError(toErrorMessage(caught, 'That promo code could not be applied.'));
+    } finally {
+      setApplying(false);
+    }
+  }
+
+  function collectResponses() {
+    const formResponses: FormResponseInput[] = [];
+    for (const field of fields) {
+      let value: FormResponseInput['value'] | undefined = answers[field.id];
+      if (field.type === 'NUMBER' && value !== undefined && value !== '') {
+        value = Number(value);
+      }
+      const empty = value === undefined || value === '' || (Array.isArray(value) && value.length === 0) || (typeof value === 'number' && Number.isNaN(value));
+      if (field.required && empty) {
+        throw new Error(`${field.name} is required.`);
+      }
+      if (!empty && value !== undefined) {
+        formResponses.push({ fieldId: field.id, value });
+      }
+    }
+    return formResponses;
+  }
+
+  async function onSubmit() {
+    if (!fullName.trim() || !email.trim() || !phone.trim()) {
+      setError('Name, email, and phone are required.');
+      return;
+    }
+    if (!agreed) {
+      setError('Agree to the terms to continue.');
+      return;
+    }
+    let formResponses: FormResponseInput[] = [];
+    try {
+      formResponses = collectResponses();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Check the questions and try again.');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    try {
+      orderStarted.current = true;
+      const result = await createOrder({
+        holdId: hold!.id,
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        ...(applied ? { promoCode: applied } : {}),
+        ...(formResponses.length ? { formResponses } : {}),
+      });
+      setHold(null);
+      clearSelection();
+      if (result.payhere) {
+        setPayhere(result.payhere);
+        router.replace({ pathname: '/pay/[id]', params: { id: result.order.id } });
+        return;
+      }
+      router.replace({ pathname: '/order/[id]', params: { id: result.order.id } });
+    } catch (caught) {
+      orderStarted.current = false;
+      setError(toErrorMessage(caught, 'Could not create the order.'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.page }}>
-      <BookingHeader step={3} timer title="Checkout" titleSize={17} />
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.page }}>
+      <BookingHeader step={hold.kind === 'standing' ? 2 : 3} steps={hold.kind === 'standing' ? ['1 · Tickets', '2 · Checkout'] : undefined} timer title="Checkout" titleSize={17} />
       <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: 22, paddingHorizontal: 20, paddingBottom: 26, gap: 24 }}>
         <Display>Almost <Hl>yours.</Hl></Display>
+        {error ? <T accessibilityRole="alert" color={c.danger}>{error}</T> : null}
 
         <View style={{ backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 22, overflow: 'hidden' }}>
           <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12, borderBottomWidth: 1, borderBottomColor: c.lineSoft }}>
-            <Image source={event.img} style={{ width: 56, height: 56, borderRadius: 14 }} />
+            {cover ? <Image source={{ uri: cover }} style={{ width: 56, height: 56, borderRadius: 14 }} /> : null}
             <View style={{ flex: 1, gap: 2 }}>
-              <T w={800} s={15}>{event.fullName}</T>
-              <T s={12} color={c.muted}>{event.dateLine}</T>
-              <T s={12} color={c.muted}>{event.venue}</T>
+              <T w={800} s={15}>{event.name}</T>
+              <T s={12} color={c.muted}>{formatEventWhen(event.start, event.end)}</T>
+              <T s={12} color={c.muted}>{event.venue?.name}</T>
             </View>
           </View>
           <View style={{ paddingVertical: 14, paddingHorizontal: 16, gap: 10 }}>
-            <Line label={`${cart.summary}${seats ? ` · Seats ${seats}` : ''}`} value={lkr(cart.subtotal)} />
-            <Line label="Booking fee" value={lkr(BOOKING_FEE)} />
-            {cart.promo ? <Line label="Promo · EARLYBIRD" value={`− ${lkr(PROMO_DISCOUNT)}`} color={c.success} /> : null}
+            <Line label={quote.summary || 'Tickets'} value={formatMoney(String(quote.subtotal)) ?? 'LKR 0'} />
+            {quote.discount > 0 ? (
+              <Line label={applied ? `Promo · ${applied}` : 'Discount'} value={`− ${formatMoney(String(quote.discount))}`} color={c.success} />
+            ) : null}
             <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
-              {/* L4: invalid codes get a red border, an alert icon and a reason below. */}
-              <View style={{ flex: 1, height: promoError ? 44 : 46, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: promoError ? c.white : c.field, borderWidth: promoError ? 2 : 1, borderColor: promoError ? c.error : c.line, borderRadius: 12 }}>
-                <TextInput
+              <View style={{ flex: 1 }}>
+                <Field
                   accessibilityLabel="Promo code"
                   placeholder="Promo code"
-                  placeholderTextColor={c.subtle}
                   autoCapitalize="characters"
                   autoCorrect={false}
-                  value={promoCode}
-                  onChangeText={v => {
-                    setPromoCode(v);
-                    setPromoError(null);
+                  value={draftPromo}
+                  onChangeText={(value) => {
+                    setDraftPromo(value.toUpperCase());
+                    setPromoError('');
                   }}
-                  onSubmitEditing={applyPromo}
-                  style={[inputText, { flex: 1, fontSize: 14 }, promoError ? { fontFamily: font[800], letterSpacing: 1.1 } : null]}
+                  onSubmitEditing={() => void applyPromo()}
+                  editable={!applied}
+                  invalid={Boolean(promoError)}
+                  background={c.field}
+                  height={46}
                 />
-                {promoError ? <Icon name="alert" size={16} color={c.error} stroke={2.4} /> : null}
               </View>
-              <Tap accessibilityRole="button" onPress={applyPromo} style={{ height: 44, paddingHorizontal: 16, borderRadius: 12, backgroundColor: c.ink, justifyContent: 'center' }}>
-                <T w={800} s={14} color={c.white}>{cart.promo ? 'Remove' : 'Apply'}</T>
-              </Tap>
+              <PrimaryButton label={applied ? 'Remove' : applying ? 'Applying…' : 'Apply'} disabled={applying} onPress={() => void applyPromo()} style={{ paddingHorizontal: 16 }} />
             </View>
-            {promoError ? (
-              <View style={{ gap: 6, marginTop: -4 }}>
-                <T w={700} s={13} color={c.error} accessibilityRole="alert">{promoError[0]}</T>
-                <T s={12} color={c.muted}>{promoError[1]}</T>
-              </View>
-            ) : null}
+            {promoError ? <T w={700} s={13} color={c.danger} accessibilityRole="alert">{promoError}</T> : null}
           </View>
           <View style={{ paddingVertical: 14, paddingHorizontal: 16, backgroundColor: c.field, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
             <T w={800} s={15}>Total</T>
-            <T w={800} s={22} ls={-0.02}>{lkr(cart.total)}</T>
+            <T w={800} s={22} ls={-0.02}>{totalLabel}</T>
           </View>
         </View>
-        {promoError ? (
-          <Tap accessibilityRole="link" onPress={() => router.navigate('/promotions')} style={{ marginTop: -8, alignSelf: 'flex-start' }}>
-            <T w={800} s={14} color={c.blue}>See your available codes →</T>
-          </Tap>
-        ) : null}
 
         <View style={{ gap: 12 }}>
           <Eyebrow>YOUR DETAILS</Eyebrow>
-          <Field label="Full name" placeholder="John Doe" autoComplete="name" textContentType="name" background={c.white} />
-          <Field label="Email" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" background={c.white} hint="We'll send your tickets here." />
-          <Field label="Phone" height={52} segment="+94" placeholder="77 123 4567" keyboardType="phone-pad" autoComplete="tel" background={c.white} />
-        </View>
-
-        <View style={{ gap: 12 }}>
-          <Eyebrow>PAYMENT METHOD</Eyebrow>
-          <View accessibilityRole="radiogroup" style={{ gap: 10 }}>
-            {paymentMethods.map(m => {
-              const on = cart.method === m.id;
-              return (
-                <Pressable
-                  key={m.id}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: on }}
-                  onPress={() => cart.setMethod(m.id)}
-                  style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: c.white, borderRadius: 16, borderWidth: on ? 2 : 1, borderColor: on ? c.blue : c.line }}
-                >
-                  <View style={{ width: 20, height: 20, borderRadius: 999, borderWidth: on ? 6 : 2, borderColor: on ? c.blue : c.disabled, backgroundColor: c.white }} />
-                  <View style={{ flex: 1, gap: 2 }}>
-                    <T w={800} s={15}>{m.name}</T>
-                    <T s={12} color={c.muted}>{m.note}</T>
-                  </View>
-                </Pressable>
-              );
-            })}
-          </View>
-          {cart.method === 'card' ? (
-            <View style={{ backgroundColor: c.white, borderWidth: 1, borderColor: c.line, borderRadius: 18, padding: 14, gap: 10 }}>
-              <Field label="Card number" placeholder="1234 5678 9012 3456" keyboardType="number-pad" autoComplete="cc-number" height={48} radius={12} value={cardNumber} onChangeText={setCardNumber} />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}>
-                  <Field label="Expiry" placeholder="MM / YY" keyboardType="number-pad" autoComplete="cc-exp" height={48} radius={12} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Field label="CVC" placeholder="123" keyboardType="number-pad" autoComplete="cc-csc" secureTextEntry height={48} radius={12} />
-                </View>
-              </View>
-            </View>
-          ) : null}
+          <Field label="Full name" placeholder="Your name" autoComplete="name" textContentType="name" background={c.white} value={fullName} onChangeText={setFullName} />
+          <Field label="Email" placeholder="you@email.com" keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" background={c.white} hint="We'll send your tickets here." value={email} onChangeText={setEmail} />
+          <Field label="Phone" placeholder="+94 77 123 4567" keyboardType="phone-pad" autoComplete="tel" textContentType="telephoneNumber" background={c.white} hint="Include the country code." value={phone} onChangeText={setPhone} />
+          {fields.map((field) => (
+            <Question key={field.id} field={field} value={answers[field.id]} onChange={(value) => setAnswers((current) => ({ ...current, [field.id]: value }))} />
+          ))}
         </View>
 
         <Checkbox checked={agreed} onChange={setAgreed}>
           <T s={13} lh={1.5} color={c.ink2}>
-            I agree to the <T w={700} s={13} color={c.blue} onPress={() => router.push('/legal')}>Terms</T> and the event&apos;s <T w={700} s={13} color={c.blue} onPress={() => router.push('/legal')}>refund policy</T>.
+            I agree to the <T w={700} s={13} color={c.blue} onPress={() => router.push('/legal')}>Terms</T> and the event&apos;s refund policy.
           </T>
         </Checkbox>
       </ScrollView>
-
       <Footer gap={10}>
-        <PrimaryButton icon="lock" label={`Pay ${lkr(cart.total)}`} disabled={!agreed} onPress={() => router.push({ pathname: '/booking/processing', params: declined ? { fail: '1' } : {} })} />
-        <T s={12} color={c.muted} align="center">Secure checkout · tickets delivered instantly</T>
+        <PrimaryButton
+          icon="lock"
+          label={submitting ? 'Placing order…' : free ? 'Confirm tickets' : `Pay ${totalLabel}`}
+          disabled={!agreed || submitting || applying}
+          onPress={() => void onSubmit()}
+        />
+        <T s={12} color={c.muted} align="center">{free ? 'Free tickets are issued straight away.' : 'You will pay on PayHere. Tickets are sent after payment.'}</T>
       </Footer>
     </KeyboardAvoidingView>
+  );
+}
+
+function Question({
+  field,
+  value,
+  onChange,
+}: {
+  field: BookingFormField;
+  value: string | number | string[] | undefined;
+  onChange: (value: string | number | string[]) => void;
+}) {
+  const options = fieldOptions(field.options);
+  const label = `${field.name}${field.required ? ' *' : ''}`;
+  if (field.type === 'DROPDOWN' || field.type === 'SINGLE_CHOICE' || field.type === 'CHECKBOX') {
+    const selected = new Set(Array.isArray(value) ? value : value ? [String(value)] : []);
+    return (
+      <View style={{ gap: 8 }}>
+        <T w={600} s={13}>{label}</T>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+          {options.map((option) => (
+            <Chip
+              key={option}
+              label={option}
+              active={selected.has(option)}
+              onPress={() => {
+                if (field.type === 'CHECKBOX') {
+                  const next = new Set(selected);
+                  if (next.has(option)) next.delete(option);
+                  else next.add(option);
+                  onChange([...next]);
+                  return;
+                }
+                onChange(option);
+              }}
+            />
+          ))}
+        </View>
+      </View>
+    );
+  }
+  return (
+    <Field
+      label={label}
+      background={c.white}
+      value={value === undefined || Array.isArray(value) ? '' : String(value)}
+      onChangeText={onChange}
+      keyboardType={field.type === 'NUMBER' ? 'number-pad' : field.type === 'PHONE' ? 'phone-pad' : field.type === 'EMAIL' ? 'email-address' : 'default'}
+      autoCapitalize={field.type === 'EMAIL' ? 'none' : 'sentences'}
+    />
   );
 }

@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
+import type { ReactElement, ReactNode } from 'react';
+import { KeyboardAvoidingView, Pressable, ScrollView, View, type ViewStyle } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 
 import { BackButton, Tap, useBottomPad, useTopPad } from './components';
+import { keyboardBehavior } from './keyboard';
 import { Icon, type IconName } from './Icon';
 import { T } from './Text';
 import { c } from './tokens';
@@ -15,6 +16,7 @@ export function SettingsScreen({
   px = 20,
   back,
   onBack,
+  refreshControl,
 }: {
   children: ReactNode;
   gap?: number;
@@ -23,13 +25,14 @@ export function SettingsScreen({
   /** Replaces the default back button (e.g. a close button). */
   back?: ReactNode;
   onBack?: () => void;
+  refreshControl?: ReactElement;
 }) {
   const top = useTopPad();
   const bottom = useBottomPad();
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: background }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: background, paddingTop: top }}>
       <StatusBar style="dark" />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1, paddingTop: top, paddingHorizontal: px, paddingBottom: bottom, gap }}>
+      <ScrollView keyboardShouldPersistTaps="handled" refreshControl={refreshControl} contentContainerStyle={{ flexGrow: 1, paddingHorizontal: px, paddingBottom: bottom, gap }}>
         <View style={{ flexDirection: 'row' }}>{back ?? <BackButton variant={background === c.white ? 'outline' : 'card'} onPress={onBack} />}</View>
         {children}
       </ScrollView>

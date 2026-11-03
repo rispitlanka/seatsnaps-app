@@ -5,6 +5,7 @@ import {
   Text,
   TextInput,
   View,
+  type TextInputInstance,
   type TextInputProps,
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
@@ -17,7 +18,7 @@ type TextFieldProps = TextInputProps & {
   isPassword?: boolean;
 };
 
-export const TextField = forwardRef<TextInput, TextFieldProps>(
+export const TextField = forwardRef<TextInputInstance, TextFieldProps>(
   function TextField(
     { label, error, isPassword, style, onFocus, onBlur, ...rest },
     ref,

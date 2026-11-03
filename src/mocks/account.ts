@@ -38,7 +38,7 @@ export const profileStats = [
 export type MenuItem = { label: string; sub: string; icon: IconName; href: string };
 
 export const profileMenu: MenuItem[] = [
-  { label: 'My tickets & bookings', sub: '2 upcoming · 3 tickets', icon: 'ticket', href: '/me/tickets' },
+  { label: 'My tickets & bookings', sub: 'Orders you have booked', icon: 'ticket', href: '/me/tickets' },
   { label: 'Saved events', sub: '3 saved', icon: 'heart', href: '/me/saved' },
   { label: 'Following', sub: '3 organisers · 2 venues', icon: 'users', href: '/me/following' },
   { label: 'Payment methods', sub: '1 card saved', icon: 'card', href: '/me/payments' },

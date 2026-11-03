@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, View } from 'react-native';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -7,6 +7,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useSession } from '@/providers/session';
 import { img } from '@/ui/assets';
 import { BackButton, Checkbox, Eyebrow, Field, Footer, PrimaryButton, TextButton, useBottomPad, useTopPad } from '@/ui/components';
+import { keyboardBehavior } from '@/ui/keyboard';
 import { QtyStepper, ResultBadge } from '@/ui/states';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
@@ -22,7 +23,7 @@ export default function Rsvp() {
   const [name, setName] = useState([user?.firstName, user?.lastName].filter(Boolean).join(' '));
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.page }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.page }}>
       <StatusBar style="dark" />
       <View style={{ backgroundColor: c.white, paddingTop: top, paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: c.line, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <BackButton />

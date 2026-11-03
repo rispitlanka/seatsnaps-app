@@ -1,5 +1,5 @@
 import { useRef, type ReactNode } from 'react';
-import { ScrollView, View, useWindowDimensions } from 'react-native';
+import { ScrollView, View, useWindowDimensions, type ScrollViewInstance } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -16,11 +16,11 @@ const toLogin = () => router.push('/login');
 /** B1–B3 onboarding pager. */
 export default function Onboarding() {
   const { width } = useWindowDimensions();
-  const pager = useRef<ScrollView>(null);
+  const pager = useRef<ScrollViewInstance>(null);
   const go = (i: number) => pager.current?.scrollTo({ x: i * width, animated: true });
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.white }}>
+    <View style={{ flex: 1, backgroundColor: c.heroTop, paddingTop: useTopPad() }}>
       <StatusBar style="light" />
       <ScrollView
         ref={pager}
@@ -72,17 +72,16 @@ function Page({
   body: string;
   footer: ReactNode;
 }) {
-  const top = useTopPad();
   const bottom = useBottomPad(34);
   const { size, ...pos } = watermark;
   return (
     <View style={{ width, flex: 1 }}>
       <LinearGradient
         colors={[c.heroTop, c.heroBottom]}
-        style={{ height: 448 + top, borderBottomLeftRadius: 36, borderBottomRightRadius: 36, overflow: 'hidden' }}
+        style={{ height: 448, borderBottomLeftRadius: 36, borderBottomRightRadius: 36, overflow: 'hidden' }}
       >
         <Image source={img.watermark} style={{ position: 'absolute', width: size, height: size, opacity: 0.08, ...pos }} />
-        <View style={{ position: 'absolute', top, left: 24, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <View style={{ position: 'absolute', top: 12, left: 24, right: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Image source={img.wordmarkWhite} style={{ width: 158, height: 30 }} accessibilityLabel="SeatSnaps" />
           {skip ? (
             <Tap accessibilityRole="button" onPress={toLogin} style={{ height: 44, paddingHorizontal: 8, justifyContent: 'center' }}>
@@ -91,7 +90,7 @@ function Page({
           ) : null}
         </View>
         {/* Illustrations are laid out on the board's 390pt canvas, centred on wider screens. */}
-        <View style={{ position: 'absolute', top: top - 52, width: 390, height: 500, alignSelf: 'center' }}>{hero}</View>
+        <View style={{ position: 'absolute', top: -40, width: 390, height: 500, alignSelf: 'center' }}>{hero}</View>
       </LinearGradient>
       <View style={{ flex: 1, paddingTop: 30, paddingHorizontal: 24, paddingBottom: bottom, gap: 12 }}>
         <Dots count={3} active={step} activeWidth={24} rest={c.dot} />

@@ -15,9 +15,9 @@ export default function Offline() {
   const bottom = useBottomPad(34);
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.page }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
       <StatusBar style="light" />
-      <View accessibilityRole="alert" style={{ backgroundColor: c.ink, paddingTop: top, paddingHorizontal: 20, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      <View accessibilityRole="alert" style={{ backgroundColor: c.ink, paddingTop: 12, paddingHorizontal: 20, paddingBottom: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Icon name="wifiOff" size={16} color={c.warnLine} stroke={2.4} />
         <T w={700} s={13} color={c.white}>No connection · showing saved info</T>
       </View>

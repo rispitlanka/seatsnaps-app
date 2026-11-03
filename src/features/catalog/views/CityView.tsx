@@ -20,9 +20,9 @@ export default function CityPicker({ cities }: { cities: string[][] }) {
   const list = cities.filter(([name]) => name.toLowerCase().includes(query.trim().toLowerCase()));
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.page }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
       <StatusBar style="dark" />
-      <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 20, gap: 16 }}>
+      <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20, gap: 16 }}>
         <View style={{ flexDirection: 'row' }}>
           <CircleButton icon="close" label="Close" variant="card" onPress={() => goBack()} />
         </View>

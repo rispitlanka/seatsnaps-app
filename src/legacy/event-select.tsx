@@ -191,7 +191,7 @@ export default function SelectTicketsScreen() {
                   <View style={styles.gaCopy}>
                     <Text style={styles.gaName}>{ticket.name}</Text>
                     <Text style={styles.hint}>
-                      {event.is_free ? "Free" : formatMoney(ticket.price)} · {left} left
+                      {event.is_free ? "Free" : formatMoney(ticket.price)} · {Number.isFinite(left) ? `${left} left` : "On sale"}
                     </Text>
                   </View>
                   <QtyStepper

@@ -19,7 +19,8 @@ export default function Promotions() {
   const [copied, setCopied] = useState('');
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ paddingTop: top, paddingBottom: 28, gap: 22 }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 28, gap: 22 }}>
       <StatusBar style="dark" />
       <View style={{ paddingHorizontal: 20, gap: 8 }}>
         <Display>Promo<Hl>tions.</Hl></Display>
@@ -129,5 +130,6 @@ export default function Promotions() {
         ))}
       </View>
     </ScrollView>
+    </View>
   );
 }

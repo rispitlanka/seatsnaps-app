@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View, type TextInput } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, View, type TextInputInstance } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -10,15 +10,16 @@ import { toErrorMessage } from '@/lib/api/errors';
 import { isUiPreview, useSession } from '@/providers/session';
 import { img } from '@/ui/assets';
 import { EyeToggle, Field, GoogleButton, OrDivider, PrimaryButton, Tap, useBottomPad, useTopPad } from '@/ui/components';
+import { keyboardBehavior } from '@/ui/keyboard';
 import { Display, Hl, T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
 
 /** A3 Sign in. */
 export default function LoginScreen() {
   const { signIn, enterPreview } = useSession();
-  const top = useTopPad(12);
+  const top = useTopPad();
   const bottom = useBottomPad();
-  const passwordRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInputInstance>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
@@ -41,10 +42,10 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: c.night }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.heroTop, paddingTop: top }}>
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
-        <LinearGradient colors={[c.heroTop, c.heroBottom]} style={{ height: 194 + top, paddingTop: top, paddingHorizontal: 24, gap: 26, overflow: 'hidden' }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled" bounces={false}>
+        <LinearGradient colors={[c.heroTop, c.heroBottom]} style={{ height: 194, paddingTop: 12, paddingHorizontal: 24, gap: 26, overflow: 'hidden' }}>
           <View style={{ position: 'absolute', top: -60, right: -90, width: 320, height: 320, borderRadius: 999, borderWidth: 40, borderColor: c.white, opacity: 0.07 }} />
           <Image source={img.wordmarkWhite} style={{ width: 158, height: 30 }} accessibilityLabel="SeatSnaps" />
           <View style={{ gap: 12 }}>

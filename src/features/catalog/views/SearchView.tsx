@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { ScrollView, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
 import type { ListDesign } from '../design-model';
-import { Eyebrow, Tap, goBack, inputText, useTopPad } from '@/ui/components';
+import { Eyebrow, Tap, goBack, inputText, useBottomPad, useTopPad } from '@/ui/components';
+import { keyboardBehavior } from '@/ui/keyboard';
 import { Icon } from '@/ui/Icon';
 import { T } from '@/ui/Text';
 import { c } from '@/ui/tokens';
@@ -21,11 +22,13 @@ function browse(label: string, categories: ListDesign['categories']) {
 export default function Search({ model }: { model: ListDesign }) {
   const { browseLinks, trending, categories } = model;
   const top = useTopPad();
+  const bottom = useBottomPad();
   const [query, setQuery] = useState('');
   const [recent, setRecent] = useState<string[]>([]);
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: c.white }} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 30, gap: 26 }}>
+    <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1, backgroundColor: c.white, paddingTop: top }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: bottom, gap: 26 }}>
       <StatusBar style="dark" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <View style={{ flex: 1, height: 52, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 10, borderWidth: 2, borderColor: c.blue, borderRadius: 16 }}>
@@ -96,5 +99,6 @@ export default function Search({ model }: { model: ListDesign }) {
         </View>
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

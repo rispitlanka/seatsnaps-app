@@ -11,7 +11,6 @@ void SystemUI.setBackgroundColorAsync(c.white);
 
 export default function Root() {
   return (
-    // DesignProvider also loads the Plus Jakarta Sans fonts used by every screen.
     <DesignProvider>
       <SessionProvider>
         <SplashScreenController />

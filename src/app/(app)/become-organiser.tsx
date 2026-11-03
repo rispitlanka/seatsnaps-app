@@ -15,9 +15,10 @@ export default function BecomeOrganiser() {
   const bottom = useBottomPad();
 
   return (
+    <View style={{ flex: 1, backgroundColor: c.ink, paddingTop: top }}>
     <ScrollView style={{ flex: 1, backgroundColor: c.page }} contentContainerStyle={{ flexGrow: 1 }}>
       <StatusBar style="light" />
-      <View style={{ backgroundColor: c.ink, paddingTop: top, paddingHorizontal: 20, paddingBottom: 30, gap: 18, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: 'hidden' }}>
+      <View style={{ backgroundColor: c.ink, paddingTop: 12, paddingHorizontal: 20, paddingBottom: 30, gap: 18, borderBottomLeftRadius: 32, borderBottomRightRadius: 32, overflow: 'hidden' }}>
         <Image source={img.watermark} style={{ position: 'absolute', width: 300, height: 300, right: -110, top: 20, opacity: 0.1 }} />
         <View style={{ flexDirection: 'row' }}>
           <CircleButton icon="chevronLeft" label="Back" variant="glass" onPress={() => goBack()} />
@@ -60,5 +61,6 @@ export default function BecomeOrganiser() {
         </View>
       </View>
     </ScrollView>
+    </View>
   );
 }

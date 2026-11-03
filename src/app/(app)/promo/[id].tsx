@@ -22,12 +22,12 @@ export default function PromotionDetail() {
   const [copied, setCopied] = useState(false);
 
   return (
-    <View style={{ flex: 1, backgroundColor: c.page }}>
+    <View style={{ flex: 1, backgroundColor: c.page, paddingTop: top }}>
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={{ paddingBottom: 26 }}>
-        <View style={{ height: 208 + top, backgroundColor: c.ink }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 26 }}>
+        <View style={{ height: 208, backgroundColor: c.ink }}>
           <Image source={img.festival} accessibilityLabel="Festival crowd under bunting" style={{ width: '100%', height: '100%' }} />
-          <View style={{ position: 'absolute', top, left: 20 }}>
+          <View style={{ position: 'absolute', top: 12, left: 20 }}>
             <BackButton variant="solid" />
           </View>
         </View>
